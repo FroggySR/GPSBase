@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include <Wire.h> //Needed for I2C to GPS
 #include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_u-blox_GNSS
-SFE_UBLOX_GPS myGPS;
+SFE_UBLOX_GNSS myGPS;
 
 //Wifi credentials
 const char* ssid     = "UniFi";
@@ -18,14 +18,14 @@ WiFiClient client;
 
 unsigned long int delayTime = 0;
 
-const bool serialDebug = false;
+const bool serialDebug = true;
 
 long lastSentRTCM_ms = 0; //Time of last data pushed to socket
 uint32_t serverBytesSent = 0; //Just a running total
 int maxTimeBeforeHangup_ms = 10000; //If we fail to get a complete RTCM frame after 10s, then disconnect from caster
 long lastReport_ms = 0; //Time of last report of bytes sent
 
-void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
+void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
  if (client.connected() == true)
   {
@@ -57,14 +57,16 @@ digitalWrite(BUILTIN_LED,true);
   Wire.begin();
   //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
   myGPS.disableDebugging();
-  if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
+
+
+  if (myGPS.begin(Wire,0x42) == false) //Connect to the u-blox module using Wire port
   {
      
     if (serialDebug)
   Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
-
+digitalWrite(BUILTIN_LED, false);
 
 
   // Start by connecting to a WiFi network
@@ -170,7 +172,8 @@ digitalWrite(BUILTIN_LED,true);
   //Note: If you leave these coordinates in place and setup your antenna *not* at SparkFun, your receiver
   //will be very confused and fail to generate correction data because, well, you aren't at SparkFun...
   //See this tutorial on getting PPP coordinates: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station/all
-  response &= myGPS.setStaticPosition(347806165, 23, 61588601, 51, 529303506, 16); //With high precision 0.1mm parts
+  response &= myGPS.setStaticPosition(347803029, 00, 62746441, 00, 529252570, 00); //With high precision 0.1mm parts ********************** STUE TEST **************
+  //response &= myGPS.setStaticPosition(347806165, 23, 61588601, 51, 529303506, 16); //With high precision 0.1mm parts ************************* Garage pos *************
   if (response == false)
   {
     if (serialDebug)
@@ -203,7 +206,7 @@ digitalWrite(BUILTIN_LED,true);
 void loop()
 {
   Serial.flush();
-  digitalWrite(BUILTIN_LED, false);
+  //digitalWrite(BUILTIN_LED, false);
 
   client = server.available();   // listen for incoming clients
   
@@ -249,8 +252,13 @@ void loop()
       }
       */
 
+      if (millis() - lastSentRTCM_ms > 20)
+      {
+        digitalWrite(LED_BUILTIN, LOW); 
+      }
+
       myGPS.checkUblox();
-      
+ 
       //Close socket if we don't have new data for 10s
       //RTK2Go will ban your IP address if you abuse it. See http://www.rtk2go.com/how-to-get-your-ip-banned/
       //So let's not leave the socket open/hanging without data
