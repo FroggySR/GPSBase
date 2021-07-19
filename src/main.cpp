@@ -9,7 +9,7 @@ const char* ssid     = "UniFi";
 const char* password = "Logitech";
 
 
-IPAddress subnet(255,255,255,0); 
+IPAddress subnet(255,255,252,0); 
 IPAddress gateway(192, 168, 0, 1); 
 IPAddress ip(192, 168, 0, 200); // IP address at Hannebjerg
 
@@ -169,7 +169,8 @@ void loop()
   
   if (client) 
   {                             // if you get a client,
-    Serial.println("New Client.");           // print a message out the serial port
+    Serial.print("New Client: ");           // print a message out the serial port
+    Serial.println(client.remoteIP());
     String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected()) 
     {            // loop while the client's connected
@@ -180,10 +181,17 @@ void loop()
         if(c == 'X')
         {
           client.stop();
+          digitalWrite(LED_BUILTIN, HIGH);
           Serial.println("");
           Serial.println("Remote restart with X command!");
           Serial.println("");
+
+          
+          //Serial.print(incoming);
+
+
           delay(1000);
+          digitalWrite(LED_BUILTIN, LOW);
           ESP.restart();
         }
       }
