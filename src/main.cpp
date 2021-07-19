@@ -8,11 +8,10 @@ SFE_UBLOX_GPS myGPS;
 const char* ssid     = "UniFi";
 const char* password = "Logitech";
 
-//IPAddress ip(192, 168, 0, 200); 
+
 IPAddress subnet(255,255,255,0); 
-//IPAddress gateway(192, 168, 0, 1); 
-IPAddress gateway(192, 168, 1, 1); 
-IPAddress ip(192, 168, 1, 240);
+IPAddress gateway(192, 168, 0, 1); 
+IPAddress ip(192, 168, 0, 200); // IP address at Hannebjerg
 
 WiFiServer server(200);
 WiFiClient client;
@@ -93,7 +92,6 @@ void setup()
   Serial.print("SSID Power:      ");
   Serial.println(WiFi.getTxPower());
   Serial.println("");
-
 
 
   //Setup GPS
