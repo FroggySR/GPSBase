@@ -18,6 +18,7 @@ WiFiClient client;
 
 unsigned long int delayTime = 0;
 
+const bool serialDebug = false;
 
 long lastSentRTCM_ms = 0; //Time of last data pushed to socket
 uint32_t serverBytesSent = 0; //Just a running total
@@ -29,7 +30,8 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
  if (client.connected() == true)
   {
     client.write(incoming); //Send this byte to socket
-    //Serial.print(incoming);
+    if (serialDebug)
+  Serial.print(incoming);
     
     serverBytesSent++;
     lastSentRTCM_ms = millis();
@@ -40,32 +42,43 @@ void SFE_UBLOX_GPS::processRTCM(uint8_t incoming)
 
 void setup()
 {
+  if (serialDebug)
   Serial.begin(115200);
+  
   //while (!Serial); //WAIT FOR SERIAL LOGON ---------------------DELETE-----------------------------
 
   pinMode(BUILTIN_LED, OUTPUT);      // set the LED pin mode
 
   delay(10);
 
+digitalWrite(BUILTIN_LED,true);
+
   // Start GPS connection
   Wire.begin();
   //myGPS.enableDebugging(); // Uncomment this line to enable debug messages
+  myGPS.disableDebugging();
   if (myGPS.begin() == false) //Connect to the u-blox module using Wire port
   {
-    Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
+     
+    if (serialDebug)
+  Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
     while (1);
   }
 
 
 
   // Start by connecting to a WiFi network
+  if (serialDebug)
   Serial.println();
+  if (serialDebug)
   Serial.print("Connecting to ");
+  if (serialDebug)
   Serial.println(ssid);
 
   if (!WiFi.config(ip, gateway, subnet)) 
   {
-    Serial.println("STA Failed to configure");
+    if (serialDebug)
+  Serial.println("STA Failed to configure");
   }
 
   WiFi.begin(ssid, password);
@@ -73,24 +86,38 @@ void setup()
   while (WiFi.status() != WL_CONNECTED) 
   {
     delay(10);
-    Serial.print(".");
+    if (serialDebug)
+  Serial.print(".");
   }
 
 
 
   // Print network status:
+  if (serialDebug)
   Serial.println("WiFi connected!");
+  if (serialDebug)
   Serial.println("");
+  if (serialDebug)
   Serial.print("IP address:      ");
+  if (serialDebug)
   Serial.println(WiFi.localIP());
+  if (serialDebug)
   Serial.print("MAC address:     ");
+  if (serialDebug)
   Serial.println(WiFi.macAddress());
+  if (serialDebug)
   Serial.print("Gateway address: ");
+  if (serialDebug)
   Serial.println(WiFi.gatewayIP());
+  if (serialDebug)
   Serial.print("Subnet address:  ");
+  if (serialDebug)
   Serial.println(WiFi.subnetMask());
+  if (serialDebug)
   Serial.print("SSID Power:      ");
+  if (serialDebug)
   Serial.println(WiFi.getTxPower());
+  if (serialDebug)
   Serial.println("");
 
 
@@ -111,11 +138,13 @@ void setup()
 
   if (response == false)
   {
-    Serial.println(F("Failed to disable NMEA. Freezing..."));
+    if (serialDebug)
+  Serial.println(F("Failed to disable NMEA. Freezing..."));
     while (1);
   }
   else
-    Serial.println(F("NMEA disabled"));
+    if (serialDebug)
+  Serial.println(F("NMEA disabled"));
 
   //Enable necessary RTCM sentences
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through UART2, message every second
@@ -127,11 +156,13 @@ void setup()
 
   if (response == false)
   {
-    Serial.println(F("Failed to enable RTCM. Freezing..."));
+    if (serialDebug)
+  Serial.println(F("Failed to enable RTCM. Freezing..."));
     while (1);
   }
   else
-    Serial.println(F("RTCM sentences enabled"));
+    if (serialDebug)
+  Serial.println(F("RTCM sentences enabled"));
 
   //-1280208.308,-4716803.847,4086665.811 is SparkFun HQ so...
   //Units are cm with a high precision extension so -1234.5678 should be called: (-123456, -78)
@@ -142,18 +173,24 @@ void setup()
   response &= myGPS.setStaticPosition(347806165, 23, 61588601, 51, 529303506, 16); //With high precision 0.1mm parts
   if (response == false)
   {
-    Serial.println(F("Failed to enter static position. Freezing..."));
+    if (serialDebug)
+  Serial.println(F("Failed to enter static position. Freezing..."));
     while (1);
   }
   else
-    Serial.println(F("Static position set"));
+    if (serialDebug)
+  Serial.println(F("Static position set"));
 
   //You could instead do a survey-in but it takes much longer to start generating RTCM data. See Example4_BaseWithLCD
   //myGPS.enableSurveyMode(60, 5.000); //Enable Survey in, 60 seconds, 5.0m
 
   if (myGPS.saveConfiguration() == false) //Save the current settings to flash and BBR
-    Serial.println(F("Module failed to save."));
-
+  { 
+    if (serialDebug)
+  Serial.println(F("Module failed to save."));
+}
+ 
+  if (serialDebug)
   Serial.println(F("Module configuration complete"));
 
 
@@ -165,29 +202,37 @@ void setup()
 
 void loop()
 {
+  Serial.flush();
+  digitalWrite(BUILTIN_LED, false);
+
   client = server.available();   // listen for incoming clients
   
   if (client) 
   {                             // if you get a client,
-    Serial.print("New Client: ");           // print a message out the serial port
-    Serial.println(client.remoteIP());
+    if (serialDebug)
+  Serial.print("New Client: ");           // print a message out the serial port
+    if (serialDebug)
+  Serial.println(client.remoteIP());
     String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected()) 
     {            // loop while the client's connected
       if (client.available()) 
       {             // if there's bytes to read from the client,
         char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
+        if (serialDebug)
+  Serial.write(c);                    // print it out the serial monitor
         if(c == 'X')
         {
           client.stop();
           digitalWrite(LED_BUILTIN, HIGH);
-          Serial.println("");
-          Serial.println("Remote restart with X command!");
-          Serial.println("");
+          if (serialDebug)
+  Serial.println("");
+          if (serialDebug)
+  Serial.println("Remote restart with X command!");
+          if (serialDebug)
+  Serial.println("");
 
-          
-          //Serial.print(incoming);
+
 
 
           delay(1000);
@@ -211,12 +256,16 @@ void loop()
       //So let's not leave the socket open/hanging without data
       if (millis() - lastSentRTCM_ms > maxTimeBeforeHangup_ms)
       {
-        Serial.println("RTCM timeout. Disconnecting...");
+        if (serialDebug)
+  Serial.println("RTCM timeout. Disconnecting...");
         client.stop();
        /*
-        Serial.println("");
-        Serial.println("Restart with timeout!");
-        Serial.println("");
+        if (serialDebug)
+  Serial.println("");
+        if (serialDebug)
+  Serial.println("Restart with timeout!");
+        if (serialDebug)
+  Serial.println("");
         delay(1000);
         ESP.restart();
         */
@@ -227,7 +276,8 @@ void loop()
       if (millis() - lastReport_ms > 1000)
       {
         lastReport_ms += 1000;
-        Serial.printf("Total sent: %d\n", serverBytesSent);
+        if (serialDebug)
+  Serial.printf("Total sent: %d\n", serverBytesSent);
       }
       */
 
@@ -236,7 +286,8 @@ void loop()
     digitalWrite(LED_BUILTIN, LOW); 
     // close the connection:
     client.stop();
-    Serial.println("Client Disconnected.");
+    if (serialDebug)
+  Serial.println("Client Disconnected.");
   }
 
     
