@@ -18,7 +18,8 @@ WiFiClient client;
 
 unsigned long int delayTime = 0;
 
-const bool serialDebug = true;
+const bool serialDebug = false;
+char t;
 
 long lastSentRTCM_ms = 0; //Time of last data pushed to socket
 uint32_t serverBytesSent = 0; //Just a running total
@@ -42,7 +43,8 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 
 void setup()
 {
-  if (serialDebug)
+
+ // if (serialDebug)
   Serial.begin(115200);
   
   //while (!Serial); //WAIT FOR SERIAL LOGON ---------------------DELETE-----------------------------
@@ -59,15 +61,16 @@ digitalWrite(BUILTIN_LED,true);
   myGPS.disableDebugging();
 
 
-  if (myGPS.begin(Wire,0x42) == false) //Connect to the u-blox module using Wire port
+  while(myGPS.begin(Wire,0x42) == false) //Connect to the u-blox module using Wire port
   {
      
     if (serialDebug)
   Serial.println(F("u-blox GPS not detected at default I2C address. Please check wiring. Freezing."));
-    while (1);
+    delay(100);
+    //while (1);
   }
-digitalWrite(BUILTIN_LED, false);
 
+digitalWrite(BUILTIN_LED, false);
 
   // Start by connecting to a WiFi network
   if (serialDebug)
@@ -172,8 +175,8 @@ digitalWrite(BUILTIN_LED, false);
   //Note: If you leave these coordinates in place and setup your antenna *not* at SparkFun, your receiver
   //will be very confused and fail to generate correction data because, well, you aren't at SparkFun...
   //See this tutorial on getting PPP coordinates: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station/all
-  response &= myGPS.setStaticPosition(347803029, 00, 62746441, 00, 529252570, 00); //With high precision 0.1mm parts ********************** STUE TEST **************
-  //response &= myGPS.setStaticPosition(347806165, 23, 61588601, 51, 529303506, 16); //With high precision 0.1mm parts ************************* Garage pos *************
+  //response &= myGPS.setStaticPosition(347803029, 00, 62746441, 00, 529252570, 00); //With high precision 0.1mm parts ********************** STUE TEST **************
+  response &= myGPS.setStaticPosition(347806165, 23, 61588601, 51, 529303506, 16); //With high precision 0.1mm parts ************************* Garage pos *************
   if (response == false)
   {
     if (serialDebug)
@@ -205,7 +208,7 @@ digitalWrite(BUILTIN_LED, false);
 
 void loop()
 {
-  Serial.flush();
+  
   //digitalWrite(BUILTIN_LED, false);
 
   client = server.available();   // listen for incoming clients
