@@ -19,7 +19,11 @@ unsigned long int delayTime = 0;
 
 const bool serialDebug = true;
 char t;
+char c;
+char sendBuffer[1024];
 int i;
+int indexSend = 2;
+int lengthRctm = 0;
 
 long lastSentRTCM_ms = 0;           //Time of last data pushed to socket
 uint32_t serverBytesSent = 0;       //Just a running total
@@ -28,14 +32,50 @@ long lastReport_ms = 0;             //Time of last report of bytes sent
 
 void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
 {
-  if (client.connected() == true)
-  {
-    client.write(incoming); //Send this byte to socket
-    Serial.write(incoming);
 
-    serverBytesSent++;
-    lastSentRTCM_ms = millis();
+  sendBuffer[indexSend] = incoming;
+
+  if (sendBuffer[indexSend - 1] == 0xd3 && sendBuffer[indexSend] == 0x00 && indexSend != 1) // Find beginning of message
+  {
+    sendBuffer[0] = 0xd3;
+    sendBuffer[1] = 0x00;
+    indexSend = 1;
   }
+
+  lengthRctm = (int)sendBuffer[2] + 5; // Get lenght of RCTM message
+
+  if (indexSend > 1023 || indexSend < 0) // Overflow send buffer
+  {
+    indexSend = 0;
+    Serial.println("Overflow");
+  }
+
+  if (indexSend == lengthRctm && indexSend > 10 && lengthRctm > 10)
+  {
+    Serial.print("lengthRctm: ");
+    Serial.println(lengthRctm);
+
+     if (client.connected() == true)
+      {
+        client.write(sendBuffer,lengthRctm);
+      }
+/*
+    for (int i = 0; i <= lengthRctm; i++)
+    {
+      if (client.connected() == true)
+      {
+        client.write(sendBuffer[i]);
+      }
+      //Serial.print(sendBuffer[i]);
+    }
+    */
+  }
+  client.flush();
+  //Serial.write(incoming);
+
+  serverBytesSent++;
+  lastSentRTCM_ms = millis();
+  indexSend++;
 }
 
 void setup()
@@ -128,12 +168,12 @@ void setup()
     Serial.println(F("NMEA disabled"));
 
   //Enable necessary RTCM sentences
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); //Enable message 1005 to output through UART2, message every second
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_I2C, 1);
-  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); //Enable message every 10 seconds
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); // Enable message 1005 to output through UART2, message every second
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_I2C, 1); // GPS MSM4: The type 4 Multiple Signal Message format for the USA’s GPS system.
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_I2C, 1); // GLONASS MSM4: The type 4 Multiple Signal Message format for the Russian GLONASS system.
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_I2C, 1); // Galileo MSM4: The type 4 Multiple Signal Message format for Europe’s Galileo system.
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_I2C, 1); // BeiDou MSM4: The type 4 Multiple Signal Message format for China’s BeiDou system.
+  response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); // Enable message every 10 seconds
 
   if (response == false)
   {
@@ -173,7 +213,7 @@ void setup()
   }
 
   if (serialDebug)
-    Serial.println(F("Module configuration complete"));
+    Serial.println(F("Module configuration complete, wait for connection..."));
 
   // Start server
   server.begin();
@@ -181,13 +221,14 @@ void setup()
 
 void loop()
 {
-
+  //myGPS.checkUblox();
   //digitalWrite(BUILTIN_LED, false);
 
   client = server.available(); // listen for incoming clients
 
   if (client)
   { // if you get a client,
+    lastSentRTCM_ms = millis();
     if (serialDebug)
       Serial.print("New Client: "); // print a message out the serial port
     if (serialDebug)
@@ -243,9 +284,10 @@ void loop()
       //Close socket if we don't have new data for 10s
       //RTK2Go will ban your IP address if you abuse it. See http://www.rtk2go.com/how-to-get-your-ip-banned/
       //So let's not leave the socket open/hanging without data
+
       if (millis() - lastSentRTCM_ms > maxTimeBeforeHangup_ms)
       {
-        
+
         Serial.println("RTCM timeout. Disconnecting...");
         client.stop();
         return;
