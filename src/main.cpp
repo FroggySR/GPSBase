@@ -55,11 +55,11 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
     Serial.print("lengthRctm: ");
     Serial.println(lengthRctm);
 
-     if (client.connected() == true)
-      {
-        client.write(sendBuffer,lengthRctm);
-      }
-/*
+    if (client.connected() == true)
+    {
+      client.write(sendBuffer, lengthRctm);
+    }
+    /*
     for (int i = 0; i <= lengthRctm; i++)
     {
       if (client.connected() == true)
@@ -166,13 +166,18 @@ void setup()
   }
   else if (serialDebug)
     Serial.println(F("NMEA disabled"));
-
+  delay(100);
   //Enable necessary RTCM sentences
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); // Enable message 1005 to output through UART2, message every second
+  delay(100);
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1074, COM_PORT_I2C, 1); // GPS MSM4: The type 4 Multiple Signal Message format for the USA’s GPS system.
+  delay(100);
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1084, COM_PORT_I2C, 1); // GLONASS MSM4: The type 4 Multiple Signal Message format for the Russian GLONASS system.
+  delay(100);
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1094, COM_PORT_I2C, 1); // Galileo MSM4: The type 4 Multiple Signal Message format for Europe’s Galileo system.
+  delay(100);
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1124, COM_PORT_I2C, 1); // BeiDou MSM4: The type 4 Multiple Signal Message format for China’s BeiDou system.
+  delay(100);
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1230, COM_PORT_I2C, 10); // Enable message every 10 seconds
 
   if (response == false)
@@ -191,7 +196,7 @@ void setup()
   //Note: If you leave these coordinates in place and setup your antenna *not* at SparkFun, your receiver
   //will be very confused and fail to generate correction data because, well, you aren't at SparkFun...
   //See this tutorial on getting PPP coordinates: https://learn.sparkfun.com/tutorials/how-to-build-a-diy-gnss-reference-station/all
-  //response &= myGPS.setStaticPosition(347803029, 00, 62746441, 00, 529252570, 00); //With high precision 0.1mm parts ********************** STUE TEST **************
+  //response &= myGPS.setStaticPosition(347683777, 22, 62746171, 48, 529252821, 13); //With high precision 0.1mm parts ********************** STUE TEST **************
   response &= myGPS.setStaticPosition(347806165, 23, 61588601, 51, 529303506, 16); //With high precision 0.1mm parts ************************* Garage pos *************
   if (response == false)
   {
