@@ -42,7 +42,7 @@ void SFE_UBLOX_GNSS::processRTCM(uint8_t incoming)
     indexSend = 1;
   }
 
-  lengthRctm = (int)sendBuffer[2] + 5; // Get lenght of RCTM message
+  lengthRctm = (int)sendBuffer[2] + 6; // Get lenght of RCTM message
 
   if (indexSend > 1023 || indexSend < 0) // Overflow send buffer
   {
