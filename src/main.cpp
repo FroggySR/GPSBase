@@ -144,7 +144,7 @@ void setup()
 
   //Setup GPS
   myGPS.setI2COutput(COM_TYPE_UBX | COM_TYPE_NMEA | COM_TYPE_RTCM3); //UBX+RTCM3 is not a valid option so we enable all three.
-
+ /*
   myGPS.setNavigationFrequency(1); //Set output in Hz. RTCM rarely benefits from >1Hz.
 
   //Disable all NMEA sentences
@@ -167,6 +167,7 @@ void setup()
   else if (serialDebug)
     Serial.println(F("NMEA disabled"));
   delay(100);
+
   //Enable necessary RTCM sentences
   response &= myGPS.enableRTCMmessage(UBX_RTCM_1005, COM_PORT_I2C, 1); // Enable message 1005 to output through UART2, message every second
   delay(100);
@@ -220,6 +221,7 @@ void setup()
   if (serialDebug)
     Serial.println(F("Module configuration complete, wait for connection..."));
 
+*/
   // Start server
   server.begin();
 }
